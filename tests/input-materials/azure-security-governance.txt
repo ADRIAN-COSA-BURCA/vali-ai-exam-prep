@@ -1,0 +1,17 @@
+AZ-900 Synthetic Test Material: Azure Security and Governance
+
+Azure governance helps organisations control resources, standards, policies and costs. Management groups can organise subscriptions into a hierarchy. Subscriptions provide boundaries for billing, access control and resource organisation. Resource groups are logical containers for resources that share a lifecycle.
+
+Azure role-based access control provides fine-grained access management. Permissions can be assigned to users, groups, service principals and managed identities. Access is normally granted through role assignments that specify a security principal, a role definition and a scope. The principle of least privilege means that a user or service should receive only the permissions required to perform its tasks.
+
+Microsoft Entra ID provides identity and access management capabilities. It can support authentication, authorisation, single sign-on and multifactor authentication. Multifactor authentication requires more than one type of verification, such as a password combined with an authenticator response.
+
+Azure Policy evaluates resources against organisational rules. Policies can audit, deny or modify resource configurations depending on their definition. Azure Policy helps enforce standards such as permitted regions, required tags or allowed resource types. Policy is different from role-based access control because policy evaluates resource compliance while role-based access control manages permissions.
+
+Microsoft Defender for Cloud provides security posture management and workload protection capabilities. It can identify recommendations and potential security improvements. Azure Monitor collects and analyses telemetry such as metrics, logs and activity information. The activity log records subscription-level events, including resource changes and administrative operations.
+
+Azure Key Vault is designed to protect secrets, keys and certificates. Applications should avoid placing credentials directly in source code. Managed identities can allow Azure resources to authenticate to supported services without storing passwords in application configuration.
+
+Cost management tools help organisations understand, monitor and control expenditure. Budgets can provide alerts when spending reaches defined thresholds. Tags can associate resources with departments, projects or environments, although tags do not automatically stop spending.
+
+Compliance refers to meeting legal, regulatory and organisational requirements. Azure compliance documentation can help organisations identify relevant certifications and standards, but the customer remains responsible for configuring and operating its own solution correctly.

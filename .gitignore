@@ -1,0 +1,11 @@
+.idea/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+build/
+.pytest_cache/
+web/uploads/

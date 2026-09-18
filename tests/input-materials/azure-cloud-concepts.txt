@@ -1,0 +1,15 @@
+AZ-900 Synthetic Test Material: Cloud Concepts
+
+Cloud computing provides on-demand access to computing resources such as servers, storage, databases, networking and software over a network. Instead of purchasing and maintaining all physical infrastructure, an organisation can consume computing services from a cloud provider.
+
+The shared responsibility model explains how security and operational responsibilities are divided between the cloud provider and the customer. The provider is generally responsible for the physical datacentre, physical network and physical hosts. The customer remains responsible for areas such as data, identities, access permissions and configuration, although the exact division depends on the service model.
+
+Public cloud services are operated by a third-party provider and shared across many customers. Private cloud environments are dedicated to one organisation. Hybrid cloud combines private infrastructure with public cloud services and can be useful when an organisation must retain some workloads locally while using cloud resources for flexibility.
+
+Infrastructure as a Service provides virtualised computing infrastructure such as virtual machines, storage and networks. The customer manages the operating system and applications while the provider manages the physical infrastructure. Platform as a Service provides a managed application platform, allowing developers to focus on application code while the provider manages more of the operating environment. Software as a Service provides a complete application that users access without managing the underlying infrastructure.
+
+Cloud elasticity is the ability to increase or decrease resources when demand changes. Scalability describes the ability of a system to handle increased workload by adding resources. High availability aims to keep services operating with minimal interruption. Fault tolerance means that a system can continue operating when a component fails.
+
+Consumption-based pricing charges customers according to the resources they use. This can reduce the need for large initial capital expenditure, but costs must still be monitored. A service-level agreement describes expected service performance, availability commitments and possible remedies when agreed service levels are not achieved.
+
+Azure regions are geographical locations containing one or more datacentres. Availability zones are physically separate datacentres within an Azure region, designed to reduce the effect of local failures. Region pairs support disaster recovery planning by associating regions within the same general geography.

@@ -1,0 +1,17 @@
+AZ-900 Synthetic Test Material: Azure Services and Architecture
+
+Azure virtual machines provide compute resources through virtualised servers. Customers can select an operating system, virtual machine size, storage configuration and network settings. Virtual machines provide control and flexibility, but customers remain responsible for operating-system configuration, updates and much of the application environment.
+
+Azure App Service is a platform-as-a-service offering for hosting web applications, application programming interfaces and backend services. It can reduce the amount of infrastructure that developers need to manage. App Service supports deployment features, scaling options and integration with other Azure services.
+
+Azure Functions provides event-driven serverless computing. A function can run in response to events such as an HTTP request, a timer or a message. Serverless computing allows developers to focus on code while the platform manages much of the underlying infrastructure. Consumption-based execution can be useful for workloads with variable demand.
+
+Azure Storage provides services for different data types. Blob Storage is designed for unstructured object data such as documents, images and backups. Azure Files provides managed file shares. Queue Storage supports asynchronous message communication. Table Storage provides a NoSQL store for structured key-value data.
+
+Azure virtual networks provide private networking for Azure resources. Subnets divide a virtual network into smaller network segments. Network security groups can filter network traffic using rules based on properties such as source, destination, port and protocol. Azure VPN Gateway can connect an Azure virtual network to another network through an encrypted connection.
+
+Azure SQL Database is a managed relational database service based on Microsoft SQL Server. Microsoft manages much of the infrastructure, maintenance and platform availability. Azure Cosmos DB is a globally distributed NoSQL database service designed for low-latency access and flexible data models.
+
+Azure Load Balancer distributes network traffic across backend resources. Application Gateway operates at the application layer and can provide web traffic routing features. Azure Front Door provides global entry-point capabilities for web applications and can use Microsoft’s global network to improve application delivery.
+
+Azure Resource Manager provides a management layer for creating, updating and deleting Azure resources. Resources can be deployed using templates or declarative infrastructure definitions. Consistent naming, tagging and resource-group organisation can make environments easier to manage.
