@@ -6,10 +6,26 @@ class MockDataHelper {
             return json_encode([
                 'type' => 'summary',
                 'summary' => [
-                    "Study Summary: {$examName} ({$diff} Level)",
-                    "Overview: this guide outlines the critical domains required to pass the {$examName} exam.",
-                    "Core Pillars: foundations, active practice, and compliance/security.",
-                    "Key Takeaway: focus on relationships between components and practice scenario-based questions daily."
+                    [
+                        'topic' => "Foundations of {$examName}",
+                        'points' => [
+                            "Core concepts: understand the primary terminology, architectural models, and core services tested in {$examName}.",
+                            "Scope of evaluation: revision should prioritize the foundational domains and weighting criteria designated for the {$diff} level.",
+                            "System principles: establish a clear understanding of standardized validation, security governance, and operational requirements.",
+                            "Domain relationships: identify how individual functional components interact and depend upon one another across scenarios.",
+                            "Study strategy: combine conceptual definitions with hands-on scenario analysis to build applied comprehension."
+                        ]
+                    ],
+                    [
+                        'topic' => "Key Practice Standards ({$diff} Level)",
+                        'points' => [
+                            "Requirement evaluation: carefully review scenario constraints, security baselines, and performance goals before selecting an approach.",
+                            "Best practices: prioritize automated, structured, and auditable setups over ad-hoc manual procedures.",
+                            "Anomaly response: diagnostic logging, monitoring telemetry, and automated alerts are critical components of operational stability.",
+                            "Exam readiness: practice eliminating distractors by verifying technical prerequisites and constraint boundaries.",
+                            "Revision review: revisit incorrect mock examination items daily to reinforce weak topic areas and concepts."
+                        ]
+                    ]
                 ]
             ]);
         }
