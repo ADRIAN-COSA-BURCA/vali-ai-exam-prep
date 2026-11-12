@@ -6,7 +6,7 @@ A modular, cross-browser, and responsive study platform containerized using Dock
 - **Frontend**: HTML5, CSS3 (Single unified stylesheet), Vanilla JavaScript (Interactivity & Chart.js)
 - **Backend**: PHP 8.1 (Modular MVC structure, all files kept under 120 lines)
 - **Database**: MySQL 8.0 (Pre-seeded with 40+ exams from all academic/vocational domains)
-- **AI Processing**: Python Azure Function container (Supports Azure AI Search, Azure OpenAI, and an offline Mock Mode)
+- **AI Processing**: Python 3.11 FastAPI microservice integrated with the OpenAI API (gpt-4o-mini, with local mock fallback)
 
 ## Setup & Execution
 

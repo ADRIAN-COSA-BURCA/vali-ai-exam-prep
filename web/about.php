@@ -9,7 +9,7 @@ require_once __DIR__ . '/views/layout/navbar.php';
         <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 1.5rem;">
             PrepAI is a modern exam preparation platform designed to help students revise smarter.
             It automatically generates study summaries, interactive flashcards, and mock tests
-            using a hybrid architecture powered by Azure AI and local processing.
+            using a microservice architecture powered by OpenAI models and local persistence.
         </p>
 
         <h3 style="margin: 1.5rem 0 0.75rem; color: var(--primary-hover);">Our Mission</h3>
@@ -22,8 +22,8 @@ require_once __DIR__ . '/views/layout/navbar.php';
         <h3 style="margin: 1.5rem 0 0.75rem; color: var(--success);">Technology Behind the Platform</h3>
         <p style="color: var(--text-muted); line-height: 1.7;">
             PrepAI is built using a modular PHP architecture, MySQL database, and a Dockerized
-            environment for consistent deployment. AI content generation is handled through an
-            Azure Function, with a local mock mode available for offline testing.
+            environment for consistent deployment. AI content generation is handled by a Python
+            FastAPI microservice integrated with the OpenAI API, with a local mock fallback available for offline testing.
         </p>
 
         <h3 style="margin: 1.5rem 0 0.75rem; color: var(--accent);">Academic Context</h3>

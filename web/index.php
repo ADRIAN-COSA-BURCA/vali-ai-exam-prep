@@ -5,7 +5,7 @@ require_once __DIR__ . '/views/layout/navbar.php';
 ?>
 <div class="container hero">
     <h1>Supercharge Your Revision with <span style="background: linear-gradient(135deg, var(--accent), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">PrepAI</span></h1>
-    <p>Automatically generate summaries, interactive flashcards, and mock tests customized to your exams. Powered by Azure AI and local persistence.</p>
+    <p>Automatically generate summaries, interactive flashcards, and mock tests customized to your exams. Powered by AI and local persistence.</p>
     <div>
         <a href="/dashboard.php" class="btn btn-primary"><i class="fa-solid fa-bolt"></i> Start Preparing Now</a>
         <a href="/login.php" class="btn btn-secondary" style="margin-left: 1rem;"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
@@ -125,7 +125,7 @@ require_once __DIR__ . '/views/layout/navbar.php';
         <div class="card">
             <h3 style="margin-bottom: 1rem; color: var(--primary-hover);"><i class="fa-solid fa-globe"></i> Online Sources Only</h3>
             <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
-                Don't have notes? No problem. Enter your exam title, and our hybrid Azure AI Search layer compiles authoritative curriculum points from trusted sources.
+                Don't have notes? No problem. Select your exam from the library, and our AI service generates comprehensive curriculum study materials tailored to the official syllabus.
             </p>
         </div>
         <div class="card">

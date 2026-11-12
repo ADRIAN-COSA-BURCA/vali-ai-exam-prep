@@ -11,7 +11,7 @@ define('DB_NAME', getenv('DB_NAME') ?: 'examprep_db');
 // Mock Mode Configuration (Offline demonstration)
 define('MOCK_MODE', filter_var(getenv('MOCK_MODE') ?: 'true', FILTER_VALIDATE_BOOLEAN));
 
-// Azure Configuration (if not in Mock Mode)
+// AI Microservice Configuration (FastAPI)
 define('AI_BACKEND_URL', getenv('AI_BACKEND_URL') ?: 'http://ai-backend:8000/generate');
 
 
