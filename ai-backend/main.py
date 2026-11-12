@@ -25,6 +25,14 @@ class AIRequest(BaseModel):
     file_type: str | None = None
 
 
+@app.get("/health")
+async def health():
+    return {
+        "status": "ok",
+        "service": "ai-backend"
+    }
+
+
 @app.post("/generate")
 async def generate(req: AIRequest):
 
