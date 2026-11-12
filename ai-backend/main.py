@@ -211,7 +211,6 @@ def extract_text_from_upload(
             return ""
 
         lines = [line for line in text.splitlines() if line.strip()]
-        random.shuffle(lines)
         combined = "\n".join(lines)
 
         max_chars = 15000
@@ -268,7 +267,7 @@ Difficulty: {difficulty}
 
 Random seed: {random_seed}
 
-Source content (shuffled):
+Source content:
 \"\"\"{content}\"\"\"
 
 IMPORTANT:
