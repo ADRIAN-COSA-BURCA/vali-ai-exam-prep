@@ -20,6 +20,9 @@ $current = basename($_SERVER['SCRIPT_NAME']);
         <?php else: ?>
             <a href="/dashboard.php" class="<?= $current === 'dashboard.php' ? 'active' : '' ?>">Dashboard</a>
 			<a href="/analytics.php" class="<?= $current === 'analytics.php' ? 'active' : '' ?>">Analytics</a>
+            <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
+                <a href="/system-status.php" class="<?= $current === 'system-status.php' ? 'active' : '' ?>">Status</a>
+            <?php endif; ?>
             <a href="/logout.php">Logout</a>
         <?php endif; ?>
 

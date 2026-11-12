@@ -17,6 +17,7 @@ A modular, cross-browser, and responsive study platform containerized using Dock
    ```
 3. Access the services in your browser:
    - **Exam Preparation Web App**: [http://localhost:8080](http://localhost:8080)
+   - **Administrator System Status**: [http://localhost:8080/system-status.php](http://localhost:8080/system-status.php) (Live health check for PHP, MySQL, database tables, FastAPI service, OpenAI key, and file storage)
    - **phpMyAdmin (DB Utility)**: [http://localhost:8081](http://localhost:8081)
 
 ## Default Administrator Account
