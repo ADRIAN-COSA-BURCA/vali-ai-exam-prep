@@ -15,8 +15,9 @@ if (!$material || ($material['user_id'] != $_SESSION['user_id'] && $_SESSION['us
     die("Unauthorized access or material not found.");
 }
 
-$userAnswers = json_decode($material['user_answers_json'], true);
-$rawQuestions = json_decode($material['raw_results_json'], true)['questions'];
+$userAnswers = json_decode($material['user_answers_json'] ?? '[]', true) ?: [];
+$rawDecoded = json_decode($material['raw_results_json'] ?? '[]', true);
+$rawQuestions = (is_array($rawDecoded) && isset($rawDecoded['questions']) && is_array($rawDecoded['questions'])) ? $rawDecoded['questions'] : [];
 
 require_once __DIR__ . '/views/layout/header.php';
 require_once __DIR__ . '/views/layout/navbar.php';
@@ -75,30 +76,32 @@ require_once __DIR__ . '/views/layout/navbar.php';
         <div class="question-grid">
             <?php foreach ($rawQuestions as $index => $q): ?>
                 <?php
-                    $ans = $userAnswers[$index];
-                    $isCorrect = ($ans['selected'] === $ans['correct']);
-                    $timedOut = $ans['timed_out'];
+                    $ans = $userAnswers[$index] ?? null;
+                    $timedOut = !empty($ans['timed_out']);
+                    $selectedOpt = $ans['selected'] ?? null;
+                    $expectedCorrect = $q['correct_index'] ?? ($ans['correct'] ?? null);
+                    $isCorrect = ($ans !== null && !$timedOut && $selectedOpt !== null && $selectedOpt === $expectedCorrect);
                 ?>
                 <div class="question-card <?= $isCorrect ? 'correct' : 'incorrect' ?>">
-                    <h4><?= $index + 1 ?>. <?= htmlspecialchars($q['question']) ?></h4>
+                    <h4><?= $index + 1 ?>. <?= htmlspecialchars($q['question'] ?? '') ?></h4>
                     <p><strong>Your Answer:</strong>
                         <?php if ($timedOut): ?>
                             <span class="badge badge-timeout">Timed Out</span>
-                        <?php elseif ($ans['selected'] === null): ?>
+                        <?php elseif ($selectedOpt === null): ?>
                             <span class="badge badge-wrong">No Answer</span>
                         <?php else: ?>
                             <span class="badge <?= $isCorrect ? 'badge-correct' : 'badge-wrong' ?>">
-                                <?= htmlspecialchars($q['options'][$ans['selected']]) ?>
+                                <?= htmlspecialchars($q['options'][$selectedOpt] ?? ('Option ' . $selectedOpt)) ?>
                             </span>
                         <?php endif; ?>
                     </p>
                     <p><strong>Correct Answer:</strong>
                         <span class="badge badge-correct">
-                            <?= htmlspecialchars($q['options'][$q['correct_index']]) ?>
+                            <?= htmlspecialchars($q['options'][$q['correct_index'] ?? 0] ?? 'N/A') ?>
                         </span>
                     </p>
                     <p class="explanation">
-                        <strong>Explanation:</strong> <?= htmlspecialchars($q['explanation']) ?>
+                        <strong>Explanation:</strong> <?= htmlspecialchars($q['explanation'] ?? '') ?>
                     </p>
                 </div>
             <?php endforeach; ?>
