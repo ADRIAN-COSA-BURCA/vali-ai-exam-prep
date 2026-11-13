@@ -549,6 +549,88 @@ run_test("T31: Database row lock verification (SELECT ... FOR UPDATE)", function
     return $lockBlocked;
 });
 
+run_test("T32: Non-question material submission (content_type='summary') rejected with HTTP 400", function() use ($testUserId, $examId, $db) {
+    $stmt = $db->prepare("
+        INSERT INTO study_materials (user_id, exam_id, source_mode, content_type, difficulty, raw_results_json)
+        VALUES (?, ?, 'online', 'summary', 'medium', '{\"type\":\"summary\"}')
+    ");
+    $stmt->execute([$testUserId, $examId]);
+    $matId = $db->lastInsertId();
+
+    $_SESSION['user_id'] = $testUserId;
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+
+    $res = MockExamController::handle(['material_id' => $matId, 'answers' => [], 'time_taken_seconds' => 10]);
+    return http_response_code() === 400
+        && $res['status'] === false
+        && strpos($res['error'], 'not a mock examination') !== false;
+});
+
+run_test("T33: Malformed JSON payload rejected with HTTP 400", function() use ($testUserId) {
+    $_SESSION['user_id'] = $testUserId;
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $res = MockExamController::handle("this-is-not-valid-json");
+    return http_response_code() === 400
+        && $res['status'] === false
+        && strpos($res['error'], 'Invalid JSON payload') !== false;
+});
+
+run_test("T34: Duplicate submission does not alter database record counts", function() use ($testUserId, $examId, $sampleQuestions, $db) {
+    $matId = create_test_material($testUserId, $examId, $sampleQuestions, true);
+    $_SESSION['user_id'] = $testUserId;
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+
+    $answersBefore = (int)$db->query("SELECT COUNT(*) FROM mock_exam_answers WHERE material_id = {$matId}")->fetchColumn();
+    $resultsBefore = (int)$db->query("SELECT COUNT(*) FROM mock_exam_results WHERE material_id = {$matId}")->fetchColumn();
+
+    $res = MockExamController::handle([
+        'material_id' => $matId,
+        'answers' => [
+            ['question_index' => 0, 'selected' => 0, 'timed_out' => false]
+        ],
+        'time_taken_seconds' => 60
+    ]);
+
+    $answersAfter = (int)$db->query("SELECT COUNT(*) FROM mock_exam_answers WHERE material_id = {$matId}")->fetchColumn();
+    $resultsAfter = (int)$db->query("SELECT COUNT(*) FROM mock_exam_results WHERE material_id = {$matId}")->fetchColumn();
+
+    return http_response_code() === 409
+        && $res['status'] === false
+        && $answersBefore === $answersAfter
+        && $resultsBefore === $resultsAfter;
+});
+
+run_test("T35: HTML render output verification for unanswered and timed-out questions", function() use ($testUserId, $examId, $sampleQuestions, $db) {
+    // Create material with 1 correct, 1 timed-out, 1 unanswered, 1 incorrect
+    $userAnswers = [
+        ['question_index' => 0, 'selected' => 0, 'correct' => 0, 'timed_out' => false],
+        ['question_index' => 1, 'selected' => null, 'correct' => 1, 'timed_out' => true],
+        ['question_index' => 2, 'selected' => null, 'correct' => 2, 'timed_out' => false],
+        ['question_index' => 3, 'selected' => 0, 'correct' => 3, 'timed_out' => false]
+    ];
+    $rawJson = json_encode(['type' => 'questions', 'questions' => $sampleQuestions]);
+    $stmt = $db->prepare("
+        INSERT INTO study_materials (user_id, exam_id, source_mode, content_type, difficulty, raw_results_json, user_answers_json, score_percentage, correct_count, incorrect_count, passed, time_taken_seconds, completed_at)
+        VALUES (?, ?, 'online', 'questions', 'medium', ?, ?, 25, 1, 3, 0, 120, NOW())
+    ");
+    $stmt->execute([$testUserId, $examId, $rawJson, json_encode($userAnswers)]);
+    $matId = $db->lastInsertId();
+
+    $_SESSION['user_id'] = $testUserId;
+    $_SESSION['user_role'] = 'user';
+    $_GET['id'] = $matId;
+
+    ob_start();
+    include '/var/www/html/mock_exam_results.php';
+    $html = ob_get_clean();
+
+    $hasTimeoutBadge = strpos($html, 'badge-timeout') !== false && strpos($html, 'Timed Out') !== false;
+    $hasNoAnswerBadge = strpos($html, 'badge-wrong') !== false && strpos($html, 'No Answer') !== false;
+    $hasCorrectBadge = strpos($html, 'badge-correct') !== false;
+
+    return $hasTimeoutBadge && $hasNoAnswerBadge && $hasCorrectBadge;
+});
+
 echo "\n========================================================\n";
 echo "TEST RESULTS: Total: {$total} | Passed: {$passed} | Failed: {$failed}\n";
 echo "========================================================\n";

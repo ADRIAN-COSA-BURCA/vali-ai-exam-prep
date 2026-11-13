@@ -2,14 +2,16 @@
 
 **Branch:** `feature/server-side-mock-exam-scoring`  
 **Base Commit:** `4d6c730` (`feat: add administrator system status page`)  
-**Status:** Implementation Complete & Fully Verified (Pending User Approval to Commit)  
+**Feature Commit:** `66280cb` (`feat: calculate mock-exam results server-side`)  
+**Status:** Committed to branch and pushed to `origin/feature/server-side-mock-exam-scoring`.  
+**Coverage Scope:** Automated in-process unit tests, controller-level integration tests, database transaction/locking tests, view HTML rendering tests, and live HTTP curl probes. Interactive browser UI workflows are documented as Not Run.  
 **Reference:** ISS-001 (Server-authoritative mock examination scoring)
 
 ---
 
 ## 1. Executive Summary
 
-Feature 2 transitions mock-examination scoring from a client-authoritative model (where browser JavaScript computed scores and the server persisted them without verification) to an authoritative, server-enforced architecture. 
+Feature 2 transitions mock-examination scoring from a client-authoritative model (where browser JavaScript computed scores and the server persisted them without verification) to an authoritative, server-enforced architecture.
 
 Under the updated implementation:
 1. The browser submits only user selections, question indexes, timeout flags, and time taken.
@@ -19,8 +21,9 @@ Under the updated implementation:
 5. The server strictly validates incoming types (rejecting booleans, floats, strings, arrays, duplicates, or out-of-range option indices).
 6. Authoritative grading is computed by `MockExamScorer::validateAndScore()` using the practice pass threshold of 70% and the integer rounding convention `round((correct / total) * 100)`.
 7. All database persistence operations—material completion update, per-question answer records, result summary row, and audit log event—are executed within a single ACID transaction (`beginTransaction`, `commit`, `rollBack`).
-8. Repeated or duplicate submissions on completed exams, as well as inconsistent state (existing results with a null `completed_at`), are rejected with HTTP 409 Conflict.
-9. Frontend error handling visibly informs the user without throwing unhandled exceptions, provides a direct link to existing results upon HTTP 409, and prevents duplicate submissions caused by button re-clicks or timer expiration.
+8. Repeated or duplicate submissions on completed exams, as well as inconsistent state (existing results with a null `completed_at`), are rejected with HTTP 409 Conflict without altering record counts.
+9. Frontend error handling visibly informs the user without unhandled exceptions, provides a direct link to existing results upon HTTP 409, and prevents duplicate submissions caused by button re-clicks or timer expiration.
+10. This implementation prevents browser-supplied score fields from determining stored grades. It does not establish the factual accuracy of AI-generated answer keys and does not turn the application into a secure certification-exam platform.
 
 ---
 
@@ -28,11 +31,11 @@ Under the updated implementation:
 
 | File | Status | Description |
 |---|---|---|
-| `web/controllers/MockExamScorer.php` | **Created** | Isolated pure unit for validating stored questions, validating submitted answers, and computing scores. |
+| `web/controllers/MockExamScorer.php` | **Created** | Isolated pure unit for validating stored questions, validating submitted answers, and computing authoritative scores. |
 | `web/controllers/MockExamController.php` | **Modified** | Implemented transactional handling, row locking (`FOR UPDATE`), strict ownership, 409 conflict checks, authoritative persistence, and structured HTTP error responses. |
 | `web/assets/js/mock_exam.js` | **Modified** | Removed client-side score computation, added submission-in-progress guard, sanitized submission payload, and added visible error/conflict handling. |
-| `web/mock_exam_results.php` | **Modified** | Made results rendering robust against null values, option index 0, timed-out flags, and unsubmitted questions. |
-| `tests/test_server_scoring.php` | **Created** | Comprehensive test suite containing 31 automated unit, integration, transactional, and concurrency test cases. |
+| `web/mock_exam_results.php` | **Modified** | Hardened results rendering against null values, option index 0, timed-out flags, and unsubmitted questions. |
+| `tests/test_server_scoring.php` | **Created** | Comprehensive test suite containing 35 automated unit, integration, transactional, and view render test cases. |
 | `docs/feature-2-server-side-scoring.md` | **Created** | This comprehensive implementation and verification report. |
 
 ---
@@ -145,76 +148,126 @@ Content-Type: application/json
 
 ---
 
-## 5. Automated Verification Results
+## 5. Verification Inventory & Execution Summary
 
-All 31 automated test cases were executed inside the container environment using `tests/test_server_scoring.php`:
-
-| ID | Test Scenario | Category | Result |
+### Mandatory Checklist Coverage
+| Check Description | Test Reference | Execution Mode | Outcome |
 |---|---|---|---|
-| **T01** | All correct answers yields 100% and passed=true | Unit / Scorer | **PASS** |
-| **T02** | All incorrect answers yields 0% and passed=false | Unit / Scorer | **PASS** |
-| **T03** | Exact 70% boundary passes (7 of 10 correct) | Unit / Scorer | **PASS** |
-| **T04** | Score below 70% fails (6 of 10 correct is 60%) | Unit / Scorer | **PASS** |
-| **T05** | Integer rounding rule: 2/3 is 67% (fail) and 13/19 is 68% (fail) | Unit / Scorer | **PASS** |
-| **T06** | Option index 0 accepted and scored correctly | Unit / Scorer | **PASS** |
-| **T07** | Null / omitted answer counted incorrect without warning | Unit / Scorer | **PASS** |
-| **T08** | Timed-out answer counted incorrect even if selected matches correct | Unit / Scorer | **PASS** |
-| **T09** | Empty submitted answers array accepted as all-unanswered | Unit / Scorer | **PASS** |
-| **T10** | Rejects boolean selection `true` with HTTP 400 | Unit / Scorer | **PASS** |
-| **T11** | Rejects boolean selection `false` with HTTP 400 | Unit / Scorer | **PASS** |
-| **T12** | Rejects float selection `1.5` with HTTP 400 | Unit / Scorer | **PASS** |
-| **T13** | Rejects string selection `"0"` with HTTP 400 | Unit / Scorer | **PASS** |
-| **T14** | Rejects duplicate question index with HTTP 400 | Unit / Scorer | **PASS** |
-| **T15** | Rejects out-of-range option index with HTTP 400 | Unit / Scorer | **PASS** |
-| **T16** | Rejects out-of-bounds question index with HTTP 400 | Unit / Scorer | **PASS** |
-| **T17** | Rejects non-boolean `timed_out` with HTTP 400 | Unit / Scorer | **PASS** |
-| **T18** | Corrupt stored questions (missing `correct_index`) rejected with HTTP 422 | Unit / Scorer | **PASS** |
-| **T19** | Corrupt stored questions (options < 2) rejected with HTTP 422 | Unit / Scorer | **PASS** |
-| **T20** | Unauthenticated request rejected with HTTP 401 | Integration / Auth | **PASS** |
-| **T21** | Non-POST request rejected with HTTP 405 | Integration / Protocol | **PASS** |
-| **T22** | Missing or non-integer `material_id` rejected with HTTP 400 | Integration / Input | **PASS** |
-| **T23** | Missing `answers` array rejected with HTTP 400 | Integration / Input | **PASS** |
-| **T24** | Invalid `time_taken_seconds` rejected with HTTP 400 | Integration / Input | **PASS** |
-| **T25** | Non-existent `material_id` rejected with HTTP 404 | Integration / Persistence | **PASS** |
-| **T26** | Strict ownership: submitting another user's material rejected with HTTP 403 | Integration / Security | **PASS** |
-| **T27** | Client-tampered scores ignored, authoritative score calculated & persisted | Integration / Integrity | **PASS** |
-| **T28** | Duplicate submission on completed material rejected with HTTP 409 | Integration / Idempotency | **PASS** |
-| **T29** | Inconsistent state (`mock_exam_results` exists, `completed_at` is NULL) rejected with HTTP 409 | Integration / Data Guard | **PASS** |
-| **T30** | Transaction rollback preserves data integrity on failure | Integration / ACID | **PASS** |
-| **T31** | Database row lock verification (`SELECT ... FOR UPDATE` blocks concurrent transactions) | Concurrency / DB Lock | **PASS** |
-
-**Summary: 31 Total | 31 Passed | 0 Failed | 0 Not run**
+| **Admin submitting another user's examination** | T26 | In-process controller integration test (`user_role='admin'`, non-owner `user_id`) | **PASS (403 Forbidden)** |
+| **Non-question material submission** | T32 | In-process controller integration test (`content_type='summary'`) | **PASS (400 Bad Request)** |
+| **Malformed JSON** | T33 | In-process controller integration test (`"this-is-not-valid-json"`) | **PASS (400 Bad Request)** |
+| **Duplicate submission with unchanged record counts** | T34 | Integration test pre/post querying `mock_exam_answers` and `mock_exam_results` | **PASS (409 Conflict, counts unchanged)** |
+| **Browser display of unanswered and timed-out questions** | T35 | Output-buffered PHP execution of `mock_exam_results.php` with timeout/null badges | **PASS (HTML badges verified)** |
+| **Browser regression checks for existing workflows** | Manual / Curl | HTTP status probes (`/index.php`, `/login.php`, `/admin-login.php`, `/system-status.php`) | **Bounded / Not Run (Interactive UI workflow not automated)** |
 
 ---
 
-## 6. Concurrency & Session-Locking Analysis
+## 6. Detailed Test Suite Execution
 
-Two distinct layers of concurrency protection are active:
-1. **PHP Session Serialisation:** PHP uses default file-based session handling (`session_start()`). When a user submits an exam request, PHP acquires an exclusive file lock on `/var/lib/php/sessions/sess_<session_id>`. Any rapid, concurrent requests originating from the *same authenticated browser session* are automatically queued and serialised at the web application layer before entering database logic.
-2. **Database Row-Level Pessimistic Locking:** To guard against separate sessions, concurrent API clients, or non-blocking session handlers attempting to score the same material simultaneously, `MockExamController` opens an explicit transaction and executes `SELECT ... FROM study_materials WHERE id = ? FOR UPDATE`. In Test T31, two distinct database connections (`$pdo1` and `$pdo2`) were opened; `$pdo1` acquired the row lock, causing `$pdo2` to block until its timeout threshold was reached (`MySQL Error 1205: Lock wait timeout exceeded`). Once Connection 1 commits and sets `completed_at = NOW()`, any subsequent transaction immediately encounters the duplicate check and aborts with HTTP 409.
+**Execution Command:**
+```powershell
+Get-Content tests/test_server_scoring.php -Raw | docker compose exec -T web php
+```
+**Tested Commit:** `66280cb`
+
+### Sanitised Execution Output
+```text
+========================================================
+FEATURE 2: SERVER-SIDE SCORING COMPREHENSIVE TEST SUITE
+========================================================
+
+--- Section 1: Pure Unit Tests (MockExamScorer) ---
+[PASS] T01: All correct answers yields 100% and passed=true
+[PASS] T02: All incorrect answers yields 0% and passed=false
+[PASS] T03: Exact 70% boundary passes (7 out of 10 correct)
+[PASS] T04: Score below 70% fails (e.g. 6 out of 10 is 60%)
+[PASS] T05: Score rounding rule: 2 out of 3 is 67% (fails) and 13 out of 19 is 68% (fails)
+[PASS] T06: Option index 0 accepted and scored correctly
+[PASS] T07: Null / omitted answer counted incorrect without warning
+[PASS] T08: Timed-out answer counted incorrect even if selected matches correct_index
+[PASS] T09: Empty submitted answers array accepted as all-unanswered
+[PASS] T10: Rejects boolean selection true with HTTP 400
+[PASS] T11: Rejects boolean selection false with HTTP 400
+[PASS] T12: Rejects float selection 1.5 with HTTP 400
+[PASS] T13: Rejects string selection '0' with HTTP 400
+[PASS] T14: Rejects duplicate question index with HTTP 400
+[PASS] T15: Rejects out-of-range option index with HTTP 400
+[PASS] T16: Rejects out-of-bounds question index with HTTP 400
+[PASS] T17: Rejects non-boolean timed_out with HTTP 400
+[PASS] T18: Corrupt stored questions (missing correct_index) rejected with HTTP 422
+[PASS] T19: Corrupt stored questions (options < 2) rejected with HTTP 422
+
+--- Section 2: Integration & Transaction Tests (MockExamController) ---
+[PASS] T20: Unauthenticated request rejected with HTTP 401
+[PASS] T21: Non-POST request rejected with HTTP 405
+[PASS] T22: Missing or non-integer material_id rejected with HTTP 400
+[PASS] T23: Missing answers array rejected with HTTP 400
+[PASS] T24: Invalid time_taken_seconds rejected with HTTP 400
+[PASS] T25: Non-existent material_id rejected with HTTP 404
+[PASS] T26: Strict ownership: submitting another user's material rejected with HTTP 403
+[PASS] T27: Client-tampered scores are ignored and server calculates authoritative grade
+[PASS] T28: Duplicate submission on completed material rejected with HTTP 409
+Inconsistent state detected: material_id 32 has mock_exam_results but completed_at is NULL.
+[PASS] T29: Inconsistent state (results exist but completed_at is NULL) rejected with HTTP 409
+[PASS] T30: Transaction rollback preserves data integrity on failure
+[PASS] T31: Database row lock verification (SELECT ... FOR UPDATE)
+[PASS] T32: Non-question material submission (content_type='summary') rejected with HTTP 400
+[PASS] T33: Malformed JSON payload rejected with HTTP 400
+[PASS] T34: Duplicate submission does not alter database record counts
+[PASS] T35: HTML render output verification for unanswered and timed-out questions
+
+========================================================
+TEST RESULTS: Total: 35 | Passed: 35 | Failed: 0
+========================================================
+```
+
+### Transport-Level HTTP Probes (Curl)
+In addition to the in-process test suite, live HTTP requests were sent against the Apache web server:
+- `curl.exe -i -X POST http://localhost:8080/api/mock_exam_results.php`  
+  **Result:** `HTTP/1.1 401 Unauthorized`, `{"status":false,"error":"Unauthorized"}`
+- `curl.exe -i -X GET http://localhost:8080/api/mock_exam_results.php`  
+  **Result:** `HTTP/1.1 405 Method Not Allowed`, `{"status":false,"error":"Invalid request method"}`
 
 ---
 
-## 7. Remaining Limitations & Security Boundaries
+## 7. Deep-Dive on Specific Test Implementations
 
-While Feature 2 achieves complete server-side scoring authority and prevents grade manipulation, several architectural boundaries remain:
-1. **No CSRF Token Protection:** The `/api/mock_exam_results.php` endpoint currently authenticates solely via the active `PHPSESSID` cookie without an anti-CSRF token. While state change is restricted to existing materials owned by the authenticated user and idempotent once completed, an attacker could theoretically induce an unauthorized submission via cross-site request forgery.
-2. **Client-Side Answer Key Exposure:** In the existing examination UI (`mock_exam.php`), the full question bank—including `correct_index` and `explanation`—is serialized into inline JavaScript (`var examQuestions = ...`). A technically inclined student can inspect DOM variables during the exam to view correct answers before submitting. Server-side scoring prevents post-submission score alteration, but does not prevent pre-submission inspection.
-3. **Client-Reported Time Taken:** `time_taken_seconds` is currently reported by the client (constrained to a non-negative integer). It does not represent server-verified wall-clock elapsed time. Implementing server-side exam session tracking, start timestamps, and elapsed-time verification is reserved for Feature 3.
+### T30: Transaction Rollback & Failure-Injection Verification
+- **Failure Injection Method:** In test T30, an invalid option index (`selected: 9999`) was passed in a submission payload for a newly created material.
+- **Controller Execution:** The controller started a database transaction (`$db->beginTransaction()`), acquired the row lock (`SELECT ... FOR UPDATE`), loaded the material, and invoked `MockExamScorer::validateAndScore()`. Because `9999` exceeded the available option count (4), `MockExamScorer` flagged validation failure (`http_code: 400`).
+- **Rollback Trigger:** Upon detecting `!$scoring['valid']`, the controller executed `$db->rollBack()`, set HTTP 400, and returned the validation error.
+- **Post-Rollback Integrity Checks:** Test T30 directly verified that:
+  1. `study_materials.completed_at` remained strictly `NULL`.
+  2. `study_materials.score_percentage` remained strictly `NULL`.
+  3. `SELECT COUNT(*) FROM mock_exam_answers WHERE material_id = ?` returned exactly `0`.
+  4. `SELECT COUNT(*) FROM mock_exam_results WHERE material_id = ?` returned exactly `0`.
+
+### T31: Database Row-Lock Verification (`SELECT ... FOR UPDATE`)
+- **Execution Method:** Test T31 tested database-level locking independently from the web layer:
+  1. Opened two distinct PDO connections (`$pdo1` and `$pdo2`) to MySQL.
+  2. `$pdo1` started a transaction and executed `SELECT id FROM study_materials WHERE id = ? FOR UPDATE`.
+  3. `$pdo2` configured `SET innodb_lock_wait_timeout = 1`, started a transaction, and attempted to execute the identical `SELECT id ... FOR UPDATE` on the locked row.
+  4. `$pdo2` was blocked by MySQL's InnoDB row lock and threw a `PDOException` with MySQL error 1205 (`Lock wait timeout exceeded`).
+  5. Both connections executed `rollBack()`.
+- **Note on Concurrency Scope:** This test verified InnoDB row-level locking behavior. Complete overlapping concurrent HTTP requests through Apache were not tested because PHP's default file-based session handler locks the session file (`/var/lib/php/sessions/sess_*`), automatically serializing requests originating from the same session before they reach the database.
 
 ---
 
-## 8. Rollback Instructions
+## 8. Remaining Limitations & Boundaries
 
-If rollback is required, restore the baseline commit `4d6c730`:
+1. **No CSRF Token Protection:** The `/api/mock_exam_results.php` endpoint relies solely on the session cookie (`PHPSESSID`) without an anti-CSRF token. While state modification is restricted to materials owned by the authenticated user and idempotent once completed, an attacker could theoretically induce an unauthorized submission via cross-site request forgery.
+2. **Client-Side Answer Key Exposure:** In `mock_exam.php`, the questions array rendered into inline JavaScript (`var examQuestions = ...`) includes `correct_index` and `explanation`. A technically proficient user can inspect client memory or DOM variables during the quiz to view correct answers before submitting. Server-side scoring prevents post-submission score alteration, but does not prevent pre-submission inspection.
+3. **Client-Reported Time Taken:** `time_taken_seconds` is currently submitted by the client (validated as a non-negative integer). Server-side elapsed wall-clock time recording and attempt session tracking are not part of Feature 2.
+
+---
+
+## 9. Reversion Instructions
+
+To revert the changes made in Feature 2, use standard Git revert:
 ```bash
 git checkout feature/server-side-mock-exam-scoring
-git restore web/assets/js/mock_exam.js web/controllers/MockExamController.php web/mock_exam_results.php
-rm -f web/controllers/MockExamScorer.php tests/test_server_scoring.php docs/feature-2-server-side-scoring.md
+git revert 66280cb
 ```
-Or reset the branch:
-```bash
-git reset --hard 4d6c730
-git clean -fd
-```
-*(No database schema migrations were applied; hence, no database rollback is required).*
+
+> [!WARNING]
+> Reverting the Git commit reverses only the application codebase. Any test rows created during test execution (such as test materials or result records in MySQL) remain in the database unless cleaned manually or reset via database container re-initialisation.
